@@ -10,6 +10,7 @@ const VEHICLE_COLORS = [
 // ── State ──────────────────────────────────────────────────────────────────────
 const state = {
   mode: 'delivery',
+  phase: 'creating',    // 'creating' | 'results'
   pendingPickup: null,  // { id, lat, lon, marker }
   items: [],            // vehicle | delivery objects
   nextId: 1,
@@ -153,8 +154,43 @@ function removeItem(id) {
   updateCounters();
 }
 
+// ── Phase management ──────────────────────────────────────────────────────────
+function setPhase(phase) {
+  const prev = state.phase;
+  state.phase = phase;
+  const isCreate = phase === 'creating';
+
+  document.getElementById('phase-create').classList.toggle('hidden', !isCreate);
+  document.getElementById('phase-result').classList.toggle('hidden', isCreate);
+
+  if (phase === 'results') {
+    // Cancel pending pickup
+    if (state.pendingPickup) {
+      state.pendingPickup.marker.remove();
+      state.pendingPickup = null;
+      document.getElementById('pending-hint').classList.add('hidden');
+    }
+    // Hide P/D circle markers only (keep vehicle icons and pickup–dropoff dash lines)
+    state.items.forEach(item => {
+      if (item.type === 'delivery') {
+        item.pickup.marker.remove();
+        item.dropoff.marker.remove();
+      }
+    });
+  } else if (phase === 'creating' && prev === 'results') {
+    // Restore P/D circle markers
+    state.items.forEach(item => {
+      if (item.type === 'delivery') {
+        item.pickup.marker.addTo(map);
+        item.dropoff.marker.addTo(map);
+      }
+    });
+  }
+}
+
 // ── Map click ─────────────────────────────────────────────────────────────────
 map.on('click', e => {
+  if (state.phase !== 'creating') return;
   if (state.mode === 'vehicle') {
     addVehicle(e.latlng);
   } else {
@@ -203,7 +239,6 @@ function clearResults() {
   state.displayMode = 'detailed';
   const detailedRadio = document.querySelector('input[name="display-mode"][value="detailed"]');
   if (detailedRadio) detailedRadio.checked = true;
-  document.getElementById('results').classList.add('hidden');
 }
 
 // ── Clear all ─────────────────────────────────────────────────────────────────
@@ -267,6 +302,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
     const data = await res.json();
     state.lastResponse = data;
     renderResults(data, vehicles);
+    setPhase('results');
   } catch (err) {
     alert(`Request failed: ${err.message}`);
   } finally {
@@ -367,7 +403,6 @@ function renderResults(data, vehicles) {
       Object.values(markersByVehicleId).forEach(markers => markers.forEach(m => m.setOpacity(1)));
     });
   });
-  document.getElementById('results').classList.remove('hidden');
 
   // Fit map to solution
   if (boundsCoords.length > 0) {
@@ -406,6 +441,29 @@ document.getElementById('btn-download-csv').addEventListener('click', () => {
     new Blob([rows.join('\n')], { type: 'text/csv' }),
     'vrp-solution.csv'
   );
+});
+
+// ── New Route ─────────────────────────────────────────────────────────────────
+document.getElementById('btn-new-route').addEventListener('click', () => {
+  const mode = document.querySelector('input[name="new-route-mode"]:checked').value;
+  clearResults();
+  if (mode === 'empty') {
+    // Remove what's still on the map in result phase (vehicle icons + dash lines)
+    state.items.forEach(item => {
+      if (item.type === 'vehicle') {
+        item.marker.remove();
+      } else {
+        item.line.remove();
+        // P/D circles already removed by setPhase('results'), safe to call remove() again
+        item.pickup.marker.remove();
+        item.dropoff.marker.remove();
+      }
+    });
+    state.items = [];
+    state.nextId = 1;
+  }
+  setPhase('creating');  // restores markers for 'keep', no-op forEach for 'empty'
+  updateCounters();
 });
 
 // ── Display mode toggle ────────────────────────────────────────────────────────
