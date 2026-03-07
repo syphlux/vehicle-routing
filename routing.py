@@ -72,6 +72,9 @@ def solve_vrp(request: SolveRequest, duration_matrix: list[list[int]]) -> dict:
     
 
     # --- Pickup/delivery pairing constraints ---
+    # Each pair is optional: solver may skip both nodes but pays a high penalty,
+    # so skipping only happens when a delivery is genuinely infeasible (e.g. cross-water).
+    SKIP_PENALTY = 100_000_000  # >> any realistic arc cost (seconds)
     for i in range(D):
         pickup_idx = manager.NodeToIndex(V + 2 * i)
         dropoff_idx = manager.NodeToIndex(V + 2 * i + 1)
@@ -79,6 +82,8 @@ def solve_vrp(request: SolveRequest, duration_matrix: list[list[int]]) -> dict:
         routing.solver().Add(
             routing.VehicleVar(pickup_idx) == routing.VehicleVar(dropoff_idx)
         )
+        routing.AddDisjunction([pickup_idx], SKIP_PENALTY)
+        routing.AddDisjunction([dropoff_idx], SKIP_PENALTY)
 
     # --- Search parameters ---
     search_params = pywrapcp.DefaultRoutingSearchParameters()
