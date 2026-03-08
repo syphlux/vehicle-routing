@@ -255,7 +255,7 @@ function clearResults() {
   state.lastResponse = null;
   state.displayMode = 'detailed';
   const toggle = document.getElementById('toggle-display-mode');
-  if (toggle) toggle.checked = false;
+  if (toggle) toggle.checked = true;
 }
 
 // ── Clear all ─────────────────────────────────────────────────────────────────
@@ -485,11 +485,17 @@ document.getElementById('btn-new-route').addEventListener('click', () => {
 
 // ── Display mode toggle ────────────────────────────────────────────────────────
 document.getElementById('toggle-display-mode').addEventListener('change', e => {
-  state.displayMode = e.target.checked ? 'simplified' : 'detailed';
+  state.displayMode = e.target.checked ? 'detailed' : 'simplified';
   if (!state.lastResponse) return;
   const vehicles = state.items.filter(i => i.type === 'vehicle');
   clearResultLayers();
   renderResults(state.lastResponse, vehicles);
+});
+
+// ── Sidebar toggle ────────────────────────────────────────────────────────────
+document.getElementById('sidebar-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  document.getElementById('sidebar-toggle').classList.toggle('collapsed');
 });
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
