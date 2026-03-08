@@ -317,6 +317,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   clearResults();
   document.getElementById('loading').classList.remove('hidden');
   document.getElementById('btn-generate').disabled = true;
+  document.getElementById('btn-clear').disabled = true;
 
   const body = {
     vehicles: vehicles.map(v => ({
@@ -351,6 +352,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   } finally {
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('btn-generate').disabled = false;
+    document.getElementById('btn-clear').disabled = false;
   }
 });
 
