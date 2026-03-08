@@ -45,6 +45,22 @@ function circleIcon(color, label, size = 28) {
   });
 }
 
+function circleIconBorder(fillColor, borderColor, label, size = 28) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:${fillColor};border:3px solid ${borderColor};
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:700;font-size:${size < 26 ? 10 : 12}px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.45);
+      line-height:1;">${label}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    tooltipAnchor: [size / 2, 0],
+  });
+}
+
 function vehicleIcon(color) {
   return L.divIcon({
     className: '',
@@ -126,6 +142,7 @@ function completeDelivery(latlng) {
     line: dashLine,
   };
 
+  pending.marker.off('contextmenu');
   pending.marker.on('contextmenu', e => {
     L.DomEvent.stopPropagation(e);
     removeItem(pending.id);
@@ -141,7 +158,7 @@ function completeDelivery(latlng) {
 
 function removeItem(id) {
   const idx = state.items.findIndex(i => i.id === id);
-  if (idx === -1) return;
+  if (idx === -1 || state.phase === 'results') return;
   const item = state.items[idx];
   if (item.type === 'vehicle') {
     item.marker.remove();
@@ -237,8 +254,8 @@ function clearResults() {
   clearResultLayers();
   state.lastResponse = null;
   state.displayMode = 'detailed';
-  const detailedRadio = document.querySelector('input[name="display-mode"][value="detailed"]');
-  if (detailedRadio) detailedRadio.checked = true;
+  const toggle = document.getElementById('toggle-display-mode');
+  if (toggle) toggle.checked = false;
 }
 
 // ── Clear all ─────────────────────────────────────────────────────────────────
@@ -354,8 +371,8 @@ function renderResults(data, vehicles) {
     route.stops.forEach(stop => {
       if (stop.type === 'start' || stop.type === 'end') return;
       stopNum++;
-      const stopColor = stop.type === 'pickup' ? '#3fb950' : '#f85149';
-      const marker = L.marker([stop.lat, stop.lon], { icon: circleIcon(stopColor, String(stopNum), 24) })
+      const borderColor = stop.type === 'pickup' ? '#3fb950' : '#f85149';
+      const marker = L.marker([stop.lat, stop.lon], { icon: circleIconBorder(color, borderColor, String(stopNum), 24) })
         .addTo(map)
         .bindTooltip(
           `${stop.type === 'pickup' ? '▲ Pickup' : '▼ Dropoff'} · ${stop.delivery_id}`,
@@ -445,7 +462,7 @@ document.getElementById('btn-download-csv').addEventListener('click', () => {
 
 // ── New Route ─────────────────────────────────────────────────────────────────
 document.getElementById('btn-new-route').addEventListener('click', () => {
-  const mode = document.querySelector('input[name="new-route-mode"]:checked').value;
+  const mode = document.getElementById('toggle-keep-stops').checked ? 'keep' : 'empty';
   clearResults();
   if (mode === 'empty') {
     // Remove what's still on the map in result phase (vehicle icons + dash lines)
@@ -467,9 +484,8 @@ document.getElementById('btn-new-route').addEventListener('click', () => {
 });
 
 // ── Display mode toggle ────────────────────────────────────────────────────────
-document.addEventListener('change', e => {
-  if (e.target.name !== 'display-mode') return;
-  state.displayMode = e.target.value;
+document.getElementById('toggle-display-mode').addEventListener('change', e => {
+  state.displayMode = e.target.checked ? 'simplified' : 'detailed';
   if (!state.lastResponse) return;
   const vehicles = state.items.filter(i => i.type === 'vehicle');
   clearResultLayers();

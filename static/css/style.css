@@ -159,6 +159,63 @@ body {
 }
 .btn-secondary:hover { color: #c9d1d9; border-color: #8b949e; }
 
+/* ── Toggle switch ───────────────────────────────────────────── */
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch-label {
+  font-size: 0.85rem;
+  color: #c9d1d9;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.switch-track {
+  display: block;
+  width: 40px;
+  height: 22px;
+  background: #30363d;
+  border-radius: 999px;
+  transition: background 0.25s;
+  position: relative;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #8b949e;
+  border-radius: 50%;
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s;
+}
+
+.switch input:checked + .switch-track {
+  background: #1f6feb;
+}
+
+.switch input:checked + .switch-track .switch-thumb {
+  transform: translateX(18px);
+  background: #fff;
+}
+
 /* ── Loading spinner ─────────────────────────────────────────── */
 #loading {
   text-align: center;
