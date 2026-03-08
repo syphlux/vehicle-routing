@@ -13,7 +13,8 @@ const state = {
   phase: 'creating',    // 'creating' | 'results'
   pendingPickup: null,  // { id, lat, lon, marker }
   items: [],            // vehicle | delivery objects
-  nextId: 1,
+  stopIds: new Set(),  // for quick lookup of existing stop ids when assigning deliveries to routes
+  vehicleIds: new Set(), // for quick lookup of existing vehicle ids when rendering results
   lastResponse: null,
   resultLayers: [],     // polylines + numbered stop markers to clear
   displayMode: 'detailed',
@@ -77,16 +78,35 @@ function vehicleIcon(color) {
 }
 
 // ── ID generator ───────────────────────────────────────────────────────────────
-function uid() {
-  return `id${state.nextId++}`;
+function uid(type) {
+  console.log('Generating id for type', type);
+  console.log('Existing vehicle ids:', state.vehicleIds);
+  console.log('Existing stop ids:', state.stopIds);
+  if (type === 'vehicle') {
+    let nextId = 1;
+    while (state.vehicleIds.has(`vehicle${nextId}`)) {
+      nextId++;
+    }
+    return `vehicle${nextId}`;
+  } else if (type === 'stop') {
+    let nextId = 1;
+    while (state.stopIds.has(`stop${nextId}`)) {
+      nextId++;
+    }
+    return `stop${nextId}`;
+  }
+  throw new Error(`Unknown id type: ${type}`);
 }
 
 // ── Vehicle placement ──────────────────────────────────────────────────────────
 function addVehicle(latlng) {
-  const id = uid();
+  const id = uid('vehicle');
   const capacity = parseInt(document.getElementById('vehicle-capacity').value, 10) || 3;
-  const vehicleIndex = state.items.filter(i => i.type === 'vehicle').length;
-  const color = VEHICLE_COLORS[vehicleIndex % VEHICLE_COLORS.length];
+  let vehicleIndex = 1;
+  while (state.vehicleIds.has(`vehicle${vehicleIndex}`)) {
+    vehicleIndex++;
+  }
+  const color = VEHICLE_COLORS[(vehicleIndex - 1) % VEHICLE_COLORS.length];
 
   const marker = L.marker(latlng, { icon: vehicleIcon(color) })
     .addTo(map)
@@ -98,12 +118,13 @@ function addVehicle(latlng) {
   });
 
   state.items.push({ type: 'vehicle', id, lat: latlng.lat, lon: latlng.lng, capacity, color, marker });
+  state.vehicleIds.add(id);
   updateCounters();
 }
 
 // ── Delivery placement (two-click) ─────────────────────────────────────────────
 function startPickup(latlng) {
-  const id = uid();
+  const id = uid('stop');
   const marker = L.marker(latlng, { icon: circleIcon('#3fb950', 'P') })
     .addTo(map)
     .bindTooltip('Pickup — click map for dropoff', { permanent: false });
@@ -145,14 +166,17 @@ function completeDelivery(latlng) {
   pending.marker.off('contextmenu');
   pending.marker.on('contextmenu', e => {
     L.DomEvent.stopPropagation(e);
+    state.stopIds.delete(pending.id);
     removeItem(pending.id);
   });
   dropoffMarker.on('contextmenu', e => {
     L.DomEvent.stopPropagation(e);
+    state.stopIds.delete(pending.id);
     removeItem(pending.id);
   });
 
   state.items.push(item);
+  state.stopIds.add(pending.id);
   updateCounters();
 }
 
@@ -162,10 +186,12 @@ function removeItem(id) {
   const item = state.items[idx];
   if (item.type === 'vehicle') {
     item.marker.remove();
+    state.vehicleIds.delete(item.id);
   } else {
     item.pickup.marker.remove();
     item.dropoff.marker.remove();
     item.line.remove();
+    state.stopIds.delete(item.id);
   }
   state.items.splice(idx, 1);
   updateCounters();
@@ -387,7 +413,7 @@ function renderResults(data, vehicles) {
     const mins = Math.round(route.duration_s / 60);
     routeHtml += `
       <div class="route-item" style="border-left-color:${color}" data-vehicle-id="${route.vehicle_id}">
-        <strong>${route.vehicle_id}</strong> &nbsp;cap ${route.capacity}<br>
+        <strong>${route.vehicle_id}</strong> &nbsp;Capacity: ${route.capacity}<br>
         ${deliveryStops.length} deliveries · ${km} km · ${mins} min
       </div>`;
   });
