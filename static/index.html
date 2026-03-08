@@ -3,20 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Routing Problem</title>
+  <title>SplitFleet</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
   <div id="sidebar">
     <div class="sidebar-header">
-      <h1>VRP Demo</h1>
-      <p class="subtitle">Pickup &amp; Delivery · Vehicle Capacity</p>
+      <h1>SplitFleet</h1>
+      <p class="subtitle">Pickup &amp; Delivery</p>
     </div>
 
     <div id="phase-create">
       <div class="section">
-        <h2>Placement Mode</h2>
+        <h2>Item type</h2>
         <label class="radio-label">
           <input type="radio" name="mode" value="delivery" checked>
           <span class="radio-dot delivery"></span> Add Delivery
@@ -52,7 +56,7 @@
 
     <div id="loading" class="hidden">
       <div class="spinner"></div>
-      <p>Solving… (up to 10 s)</p>
+      <p>Solving…</p>
     </div>
 
     <div id="phase-result" class="hidden">
@@ -70,7 +74,6 @@
       </div>
       <div class="section actions">
         <button id="btn-download-json" class="btn btn-secondary">Download JSON</button>
-        <button id="btn-download-csv" class="btn btn-secondary">Download CSV</button>
       </div>
       <div class="section">
         <h2>New Route</h2>

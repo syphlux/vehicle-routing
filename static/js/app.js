@@ -469,23 +469,6 @@ document.getElementById('btn-download-json').addEventListener('click', () => {
   );
 });
 
-document.getElementById('btn-download-csv').addEventListener('click', () => {
-  if (!state.lastResponse) return;
-  const rows = ['vehicle_id,stop_type,delivery_id,lat,lon,distance_m,duration_s'];
-  state.lastResponse.routes.forEach(route => {
-    route.stops.forEach(stop => {
-      rows.push([
-        route.vehicle_id, stop.type, stop.delivery_id ?? '',
-        stop.lat, stop.lon, route.distance_m, route.duration_s,
-      ].join(','));
-    });
-  });
-  blobDownload(
-    new Blob([rows.join('\n')], { type: 'text/csv' }),
-    'vrp-solution.csv'
-  );
-});
-
 // ── New Route ─────────────────────────────────────────────────────────────────
 document.getElementById('btn-new-route').addEventListener('click', () => {
   const mode = document.getElementById('toggle-keep-stops').checked ? 'keep' : 'empty';
