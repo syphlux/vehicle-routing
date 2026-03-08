@@ -79,9 +79,6 @@ function vehicleIcon(color) {
 
 // ── ID generator ───────────────────────────────────────────────────────────────
 function uid(type) {
-  console.log('Generating id for type', type);
-  console.log('Existing vehicle ids:', state.vehicleIds);
-  console.log('Existing stop ids:', state.stopIds);
   if (type === 'vehicle') {
     let nextId = 1;
     while (state.vehicleIds.has(`vehicle${nextId}`)) {
