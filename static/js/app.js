@@ -21,8 +21,8 @@ const state = {
 };
 
 // ── Map initialisation ─────────────────────────────────────────────────────────
-const PARIS_CENTER = [48.8566, 2.3522];
-const map = L.map('map').setView(PARIS_CENTER, 12);
+const ALGIERS_CENTER = [36.6538, 3.0588];
+const map = L.map('map').setView(ALGIERS_CENTER, 11);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
   maxZoom: 19,
@@ -362,9 +362,10 @@ function renderResults(data, vehicles) {
   const colorByVehicleId = {};
   vehicles.forEach(v => { colorByVehicleId[v.id] = v.color; });
 
-  // vehicle_id → polyline / markers, for hover highlight
-  const polylineByVehicleId = {};
-  const markersByVehicleId  = {};
+  // vehicle_id → polyline / markers / delivery ids, for hover highlight
+  const polylineByVehicleId  = {};
+  const markersByVehicleId   = {};
+  const deliveryIdsByVehicleId = {};
 
   // Include vehicle depot markers (placed during setup)
   vehicles.forEach(v => {
@@ -378,6 +379,7 @@ function renderResults(data, vehicles) {
     const color = colorByVehicleId[route.vehicle_id] || VEHICLE_COLORS[rIdx % VEHICLE_COLORS.length];
     const deliveryStops = route.stops.filter(s => s.type === 'pickup');
     if (deliveryStops.length === 0) return;  // empty route — skip
+    deliveryIdsByVehicleId[route.vehicle_id] = new Set(deliveryStops.map(s => s.delivery_id));
 
     // Polyline — road geometry (detailed) or straight lines between stops (simplified)
     const coords = state.displayMode === 'simplified'
@@ -442,10 +444,15 @@ function renderResults(data, vehicles) {
       Object.entries(markersByVehicleId).forEach(([id, markers]) => {
         markers.forEach(m => m.setOpacity(id === vid ? 1 : 0.2));
       });
+      const hoveredIds = deliveryIdsByVehicleId[vid] || new Set();
+      state.items.forEach(i => {
+        if (i.type === 'delivery') i.line.setStyle({ opacity: hoveredIds.has(i.id) ? 0.7 : 0.1 });
+      });
     });
     item.addEventListener('mouseleave', () => {
       Object.values(polylineByVehicleId).forEach(pl => pl.setStyle({ opacity: 0.9 }));
       Object.values(markersByVehicleId).forEach(markers => markers.forEach(m => m.setOpacity(1)));
+      state.items.forEach(i => { if (i.type === 'delivery') i.line.setStyle({ opacity: 0.7 }); });
     });
   });
 
