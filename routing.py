@@ -1,5 +1,9 @@
+import logging
+import time
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
 from models import SolveRequest
+
+logger = logging.getLogger(__name__)
 
 
 def solve_vrp(request: SolveRequest, duration_matrix: list[list[int]]) -> dict:
@@ -93,15 +97,22 @@ def solve_vrp(request: SolveRequest, duration_matrix: list[list[int]]) -> dict:
     search_params.local_search_metaheuristic = (
         routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH 
     )
-    search_params.time_limit.seconds = 10
-    
-    best = [float("inf")]  # mutable to allow modification in callback
+    search_params.time_limit.seconds = 30  # hard cap
+
+    NO_IMPROVE_SECONDS = 3
+    best = [float("inf")]
+    last_improvement = [time.time()]
+
     def on_solution_callback():
         objective = routing.CostVar().Value()
         if objective < best[0]:
             best[0] = objective
-            print(f"Found solution with objective {objective}")
-        
+            last_improvement[0] = time.time()
+            logger.info(f"New best solution: {objective}s total duration")
+        elif time.time() - last_improvement[0] > NO_IMPROVE_SECONDS:
+            logger.info("No improvement for %ds — stopping search", NO_IMPROVE_SECONDS)
+            routing.solver().FinishCurrentSearch()
+
     routing.AddAtSolutionCallback(on_solution_callback)
 
     solution = routing.SolveWithParameters(search_params)
