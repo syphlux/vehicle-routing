@@ -76,13 +76,30 @@ body {
 }
 
 .radio-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
+  overflow: hidden;
 }
-.radio-dot.delivery { background: #3fb950; }
-.radio-dot.vehicle  { background: #58a6ff; }
+.radio-dot.delivery {
+  background: linear-gradient(to right, #3fb950 50%, #f85149 50%);
+}
+
+.radio-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.legend-vehicle-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 11px;
+  text-align: center;
+}
 
 /* ── Number input ─────────────────────────────────────────────── */
 .input-row {
@@ -287,7 +304,6 @@ body {
 }
 .dot.green { background: #3fb950; }
 .dot.red   { background: #f85149; }
-.dot.blue  { background: #58a6ff; }
 
 .hint-sm { font-size: 0.72rem; color: #6e7681; margin-top: 2px; }
 
